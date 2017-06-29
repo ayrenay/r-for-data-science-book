@@ -1,0 +1,67 @@
+---
+title: "Chapter 3"
+output:
+  html_notebook: 
+    highlight: tango
+    theme: spacelab
+    code_folding: show
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, include = TRUE)
+```
+
+
+```{r, include=FALSE}
+library(tidyverse)
+library(knitr)
+```
+
+# 3.1 First Steps
+```{r view}
+head(mpg) # preview data
+```
+
+
+```{r plot}
+ggplot(data = mpg) +
+    geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+
+##Exercises
+1. What happens with the following code ```ggplot(data = mpg)```?
+
+    Nothing - the ggplot() function just creates the coordinate system for later plots.
+
+2. How many rows are in mpg? How many columns?
+```{r}
+nrow(mpg)
+```
+```{r}
+ncol(mpg)
+```
+
+3. What does the ```drv``` variable describe?
+      
+      ```drv``` describes whether or not a car has front, rear, or four wheel drive.
+
+```{r}
+?mpg
+```
+
+4. Make a scatterplot of hwy vs cyl.
+```{r}
+ggplot(data = mpg) +
+  geom_point(aes(x = cyl, y = hwy))
+```
+
+5. What happens if you make a scatterplot of ```class``` and ```drv```? Why is the plot not useful?
+
+    The plot isn't useful as a scatterplot, because it is mapping two categorical variables against one another on a plot that is intended to represent quantitative scale -- the differences between steps have no quantitative meaning.
+    
+    
+```{r}
+ggplot(data = mpg) +
+      geom_point(aes(x = class, y = drv))
+```
