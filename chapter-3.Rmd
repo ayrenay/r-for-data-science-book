@@ -14,10 +14,9 @@ knitr::opts_chunk$set(echo=TRUE, include = TRUE)
 
 ```{r, include=FALSE}
 library(tidyverse)
-library(knitr)
 ```
 
-# 3.1 First Steps
+# 3.2 First Steps
 ```{r view}
 head(mpg) # preview data
 ```
@@ -50,6 +49,7 @@ ncol(mpg)
 ?mpg
 ```
 
+
 4. Make a scatterplot of hwy vs cyl.
 ```{r}
 ggplot(data = mpg) +
@@ -58,10 +58,260 @@ ggplot(data = mpg) +
 
 5. What happens if you make a scatterplot of ```class``` and ```drv```? Why is the plot not useful?
 
-    The plot isn't useful as a scatterplot, because it is mapping two categorical variables against one another on a plot that is intended to represent quantitative scale -- the differences between steps have no quantitative meaning.
+    The plot isn't useful as a scatterplot, because it is mapping two categorical variables against one another on a plot that is intended to represent quantitative scale -- the differences between steps have no quantitative meaning. (Note: Is this right/are there other reasons as well?)
     
     
 ```{r}
 ggplot(data = mpg) +
       geom_point(aes(x = class, y = drv))
 ```
+
+# 3.3 Aesthetic Mappings
+
+  > aesthetic: a visual property of objects in a plot, which changes levels of such things as size, shape, and color
+
+You may have noticed that there are a few interesting points in the bottom right of the plot of engine displacement against highway miles per gallon. We call them interesting because they are outside of what appears to be a generally linear trend. Why is that occurring?
+
+```{r}
+ggplot(data = mpg, aes(displ, hwy)) +
+  geom_point()
+
+```
+
+One hypothesis we'll investigate here is this: Perhaps those cars are hybrids. This might make sense since they perform better in highway miles per gallon than other cars with similar engine displacement.
+
+First, we'll see what the ```class``` variable may reveal. For reference, this variable describes what type of car the observation is (i.e. minivan, SUV).
+```{r}
+ggplot(data = mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class))
+```
+
+As it turns out, most of these points are two-seater cars (one is a midsize car). The book authors point out here that two-seaters are more efficient for their engine displacement due to smaller bodies -- the distinction wasn't due to the cars being a hybrid after all.
+
+## Exercises
+1. Why does this code not produce blue points?
+
+    At a glance, the issue is parentheses placement. Color is being grouped with the aesthetics mapping. Since color doesn't have any connection with the data, it actually shouldn't be used in the aesthetic data mapping.
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+```
+
+
+2. Which variables in ```mpg``` categorical? Which are continuous?
+    
+    The categorical variables in ```mpg``` include manufacturer, model, and transmission (trans), among others. Examples of continuous variables include engine displacement (displ) and city miles per gallon (cty).
+```{r}
+head(mpg)
+```
+
+
+3. Map a continuous variable to ```color```, ```size```, and ```shape```. How do these aesthetics behave differently for categorical vs continuous variables?
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = -cyl))
+  # legend would need to be recalibrated here or need to find color setting to reverse scale
+```
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, size = cyl))
+  # The scale difference between 4 and 8, or even 4 and 5 doesn't make any sense
+```
+
+```{r, eval=FALSE}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, shape = cyl))
+  # Doesn't work!
+```
+
+4. What happens if you map the same variable to multiple aesthetics?
+
+    It works, but some combinations aren't recommended.
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class, size = class))
+```
+
+5. What does the ```stroke``` aesthetic do? What shapes does it work with?
+
+    From the docs:
+    
+    > Use the stroke aesthetic to modify the width of the border
+
+```{r}
+?geom_point
+```
+
+6. What happens if you map an aesthetic to something other than a variable name?
+
+    My guess before running: only engine displacement from 1 to 4 will be colored?
+    
+    It actually just colored by whether or not the condition was met. Handy!
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = displ < 5))
+```
+
+
+
+# 3.5 Facets
+
+  > facet: subplot that displays one subset of the data
+
+You can facet by a single variable using ```facet_wrap()```, which expects a discrete variable.
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap(~ class, nrow = 3)
+```
+
+
+You can facet by two variables using ```facet_grid()```.
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(drv ~ cyl)
+```
+
+Plot with shared axis using dot operator (```.```) in place of row/column:
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(class ~ .)
+```
+
+## Exercises
+1. What happens if you facet on a continuous variable?
+
+    My guess before running: it shouldn't run, given that facetting is based on classifications.
+    
+    Turns out - it does run, but it doesn't create a particularly useful plot.
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(. ~ cty)
+```
+
+2. What do the empty cells in the plot facetted by ```drv``` and ```cyl```?
+
+    The empty cells show which intersections of the two variables don't have any observations that meet the two conditions.
+    
+    How do those empty cells relate to the below plot?
+    
+    You can see those same gaps. Anywhere that was empty by facet doesn't have a point at the intersection of the two classes.
+    
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = drv, y = cyl))
+```
+
+3. What plots will the following code make? What does ```.``` do?
+
+    The plots will be facetted in a single column or row, respectively.
+
+4. What are the advantages and disadvantages to using facetting instead of color for class? How might these be affected by using a larger dataset?
+
+    One advantage is being able to have a sense of within-class trends. It is harder to compare the exact values between classes, however. I think these trends would hold even with a larger dataset, but, depending on the image dimensions, you could lose the ability to discern what's going on. (Note: What is the recommended answer here?)
+
+5. What doe the options of ```facet_wrap()``` represent? (```nrow```, ```ncol```, other layout options) Why doesn't ```facet_grid()``` have ```nrow``` and ```ncol``` arguments?
+
+    ```facet_wrap()``` is designed to make efficient use of space with one-dimensional sequences. ```nrow``` and ```ncol``` can be used to control how that two-dimensional adjustment occurs. ```facet_grid()``` is predefined as a matrix (i.e. with two dimensions).
+```{r}
+?facet_wrap
+?facet_grid
+```
+
+6. When using ```facet_grid()``` you should usually put the variable with more unique levels in the columns. Why?
+
+    The more unique values, the longer or wider a plot would be when facetted by a given dimension.
+
+# 3.6 Geometric objects
+
+> geom: the visual object used to represent the data
+
+## Exercises
+1. What geom would you use to draw... 
+
+    a line chart?
+    ```geom_line()```
+    
+    a boxplot?
+    ```geom_boxplot()```
+    
+    a histogram?
+    ```geom_histogram()```
+    
+    an area chart?
+    ```geom_area```
+
+2. What do you think this code will produce? What does it actually produce?
+    
+    ```
+    ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) + 
+      geom_point() + 
+      geom_smooth(se = FALSE)```
+ 
+    
+    Prediction: a plot of engine displacement and highway miles per gallon that shows both a scatterplot of the data and a smoothed line through the data (without a standard error band), colored by drivetrain type
+
+    Corrections - smooted lines for each type of drivetrain
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) + 
+  geom_point() + 
+  geom_smooth(se = FALSE)
+```
+
+3. What does ```show.legend = FALSE``` do? What happens if you remove it? Why do you think it was used earlier in the chapter?
+
+    This is the option to hide the legend. If removed, the legend would be displayed. In the triptych of plots earlier in the chapter, the other plots didn't have legends, so this helped the final plot have a similar appearance.
+ 
+4. What does the ```se``` argument to ```geom_smooth()``` do?
+
+    This argument removes the standard error bands around the smoothed line.
+
+5. Will these two graphs look different? Why or why not?
+
+```{r, eval = FALSE}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point() + 
+  geom_smooth()
+
+ggplot() + 
+  geom_point(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_smooth(data = mpg, mapping = aes(x = displ, y = hwy))
+```
+
+    Since both are mapping the using the same data with the same x/y mappings, the graphs will be the same.
+
+6. Recreate the R code necessary to generate the following graphs.
+```{r}
+d = ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+  geom_point()
+    
+par(mfrow = c(3,2))
+
+d +
+  geom_smooth(se = FALSE)
+
+d +
+  geom_smooth(mapping = aes(group = drv), se = FALSE)
+
+d1 = ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) +
+      geom_point()
+
+d1 +
+  geom_smooth(se = FALSE)
+
+d1 +
+  geom_smooth(se = FALSE, mapping = aes(color = NULL))
+
+d1 +
+  geom_smooth(se = FALSE, mapping = aes(linetype = drv, color = NULL))
+
+d1 +
+  geom_point(mapping = aes(), shape = 21, color = 'white')
+```
+
