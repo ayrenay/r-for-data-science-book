@@ -58,7 +58,7 @@ ggplot(data = mpg) +
 
 5. What happens if you make a scatterplot of ```class``` and ```drv```? Why is the plot not useful?
 
-    The plot isn't useful as a scatterplot, because it is mapping two categorical variables against one another on a plot that is intended to represent quantitative scale -- the differences between steps have no quantitative meaning. (Note: Is this right/are there other reasons as well?)
+    The plot isn't useful as a scatterplot, because it is mapping two categorical variables against one another on a plot that is intended to represent quantitative scale -- the differences between steps have no quantitative meaning (you aren't really able to see the trends that scatterplots are useful for viewing). (Note: Is this right/are there other reasons as well?)
     
     
 ```{r}
@@ -287,11 +287,9 @@ ggplot() +
     Since both are mapping the using the same data with the same x/y mappings, the graphs will be the same.
 
 6. Recreate the R code necessary to generate the following graphs.
-```{r}
+```{r, fig.height=2, fig.width=4}
 d = ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
   geom_point()
-    
-par(mfrow = c(3,2))
 
 d +
   geom_smooth(se = FALSE)
@@ -311,7 +309,16 @@ d1 +
 d1 +
   geom_smooth(se = FALSE, mapping = aes(linetype = drv, color = NULL))
 
-d1 +
-  geom_point(mapping = aes(), shape = 21, color = 'white')
+
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy, fill = drv)) +
+  geom_point(shape = 21, color = 'white', stroke = 2, size = 3)
 ```
 
+# 3.7 Statistical Transformations
+Let's start with a new dataset ```diamonds```. In the graph below, we see that there are many more 'ideal', 'premium', and 'very good' diamonds in this dataset (more high quality than low quality cuts).
+```{r}
+ggplot(data = diamonds, aes(x = cut)) +
+  geom_bar()
+```
+
+Bar charts are an example of a chart which maps data beyond the raw values present in the data set (compared to, for example a scatterplot).
