@@ -257,7 +257,7 @@ ggplot(data = mpg) +
     
     Prediction: a plot of engine displacement and highway miles per gallon that shows both a scatterplot of the data and a smoothed line through the data (without a standard error band), colored by drivetrain type
 
-    Corrections - smooted lines for each type of drivetrain
+    Corrections - smoothed lines for each type of drivetrain
 ```{r}
 ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) + 
   geom_point() + 
@@ -322,3 +322,204 @@ ggplot(data = diamonds, aes(x = cut)) +
 ```
 
 Bar charts are an example of a chart which maps data beyond the raw values present in the data set (compared to, for example a scatterplot).
+
+> stat: statistical transformation; the algorithm used to calculate new values for your graph
+
+Each geom has a default stat, and each stat has a default geom. This means that you can use them interchangably for simple plots. Three cases where you might need to explicitly state the stat:
+
+1. Overriding the default statistical transformation
+        (i.e. manually adding in your own values)
+2. Overriding the default mapping from transformed variables to aesthetics
+        (i.e. a bar chart of proportions instead of counts)
+3. Showing additional detail (within code) about the statistical transformation used
+
+## Exercises
+
+1. What is the default geom used with ```stat_summary()```?
+    ```pointrange```
+
+    Show a plot using the default geom instead of ```stat_summary
+    ```.
+
+    (Couldn't quite figure this one out. Solved on Stack Overflow [here](https://stackoverflow.com/questions/41850568/r-ggplot2-pointrange-example). The real thing I need to find out is how to dynamically ID min/max by group, rather than by hardcoding as in some other examples.)
+
+````{r, eval=FALSE}
+ggplot(data = diamonds, aes(x = cut, y = depth)) +
+  #geom_pointrange(mapping = aes(ymin = min(depth), ymax = max(depth)))
+  #geom_linerange(mapping = aes(ymin = depth - 1, ymax = depth + 1))
+````
+
+
+2. What does ```geom_col()``` do? How is it different than ```geom_bar()```?
+
+    ```geom_col()``` uses the ```stat_identity()``` whereas ```geom_bar()``` uses ```stat_count``` by default. This means that ```geom_bar()``` will show summarized values, while ```geom_col()``` will show the actual data values.
+    
+
+3. Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
+
+    After surveying most of the geometric objects, you see that most of those with a companion stat are named similarly, using a pattern ```geom_<object>``` : ```stat_<object>```. For example, ```geom_contour()``` : ```stat_contour()```.
+    
+    
+    
+
+- Reference lines: ```geom_abline()``` : ```-``` 
+
+    (also ```geom_hline()```, ```geom_vline()```)
+    
+- Bar charts: ```geom_bar()``` : ```stat_count()```
+
+- Column charts: ```geom_col()``` : ```-```
+
+- Heatmap of 2d bin counts: ```geom_bin2d()``` : ```stat_bin_2d()```
+
+- Box and whisker plot: ```geom_boxplot()``` : ```stat_boxplot()```
+
+- 2d contours of 3d surface: ```geom_contour()``` : ```stat_contour()```
+
+- Count overlapping points: ```geom_count()``` : ```stat_sum()```
+    
+    (looks kind of like a bubble chart; example [here](http://r4ds.had.co.nz/visualize.html).)
+
+- Smoothed density estimates: ```geom_density()``` : ```stat_density()```
+
+- Contours of a 2d density estimate: ```geom_density_2d()``` : ```stat_density_2d()```
+
+- Dotplot: ```geom_dotplot()``` : ```-``` 
+
+- Horizontal error bars: ```geom_errorbarh``` : ```-``` 
+
+- Hexagonal heatmap of 2d bin counts: ```geom_hex()``` : ```stat_bin_hex()```
+
+- Histograms and frequency polygons: ```geom_histogram()``` / ```geom_freqpoly()``` : ```stat_bin()```
+
+- Jittered points: ```geom_jitter()``` : ```-``` 
+
+- Vertical intervals (lines, crossbars, and errorbars):
+  
+    ```geom_crossbar()```
+    ```geom_errorbar()```
+    ```geom_linerange()```
+    ```geom_pointrange()```
+
+- Polygons from a reference map: ```geom_map()``` : ```-``` 
+
+- Connect observations:
+  
+    ```geom_path()```
+    ```geom_line()```
+    ```geom_step()```
+
+
+- Points (scatterplot): ```geom_points()``` : ```-```
+
+- Polygons: ```geom_polygon()``` : ```-```
+
+- Quantile-quantile plots: ```geom_qq()``` : ```stat_qq()```
+
+- Quantile regression: ```geom_quantile()``` : ```stat_quantile()```
+
+- Ribbons and area plots: 
+
+    ```geom_ribbon()```
+    ```geom_area()```
+
+- Rug plots: ```geom_rug()``` : ```-```
+
+- Line segments and curves: 
+
+    ```geom_segment()```
+    ```geom_curve()```
+
+- Smoothed conditional means: ```geom_smooth()``` : ```stat_smooth()```
+
+- Line segments parameterized by location, direction, and distance: ```geom_spoke()``` : ```-```
+
+- Text: 
+
+    ```geom_text()```
+    ```geom_label()```
+
+- Rectangles: 
+
+    ```geom_rect()```
+    ```geom_tile()```
+    ```geom_raster()```
+
+- Violin plot: ```geom_violin()``` : ```stat_ydensity()```
+
+4. What variables does ```stat_smooth()``` compute? What parameters control its behavior?
+
+    This function computes y as a (some) function of x, and can be conrolled with such items as what type of formula to use for smoothing and what smoothing method to use.
+
+5. In our proportion bar chart, we need to set ```group = 1```. Why? In other words, what is the problem with these two graphs?
+
+    The group setting is used to override default grouping behavior. This allows for the proportion to be calculated across all groups instead of within each group. See a more detailed answer on [Stack Overflow](https://stackoverflow.com/questions/39878813/r-ggplot-geom-bar-meaning-of-aesgroup-1).
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = ..prop..))
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = color, y = ..prop..))
+```
+
+
+# 3.8 Position adjustments
+Available options:
+- ```position_dodge``` (dodge overlapping objects side-to-side)
+- ```position_identity``` (don't adjust position)
+- ```position_jitter``` (jitter points to avoid overplotting)
+- ```position_jitterdodge``` (simultaneously dodge and jitter)
+- ```position_nudge``` (nudge points a fixed distance)
+- ```position_stack``` | ```position_fill``` (stack overlapping objects on top of each other)
+
+## Exercises
+1. What is the problem with this plot? How could you improve it?
+
+    This plot likely suffers from overplotting and could be improved with jitter added in.
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) + 
+  geom_point()
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) + 
+  geom_point(position = 'jitter')
+```
+
+2. What parameters to ```geom_jitter()``` control the amount of jittering?
+
+    Jittering is controlled by ```width``` and ```height``` in this function.
+
+3. Compare and contrast ```geom_jitter()``` with ```geom_count()```.
+
+    Both functions attempt to shed clarity when points are being overplotted. ```geom_jitter()``` improves the ability to highlight trends, while ```geom_count()``` improves the ability to identify membership at a given intersection point.
+
+4. What's the default position adjustment for ```geom_boxplot()```? Create a visualization of the ```mpg``` dataset that demonstrates it.
+
+```{r}
+ggplot(data = mpg, aes(x = drv, y = hwy)) +
+  geom_boxplot() # default position is dodge
+```
+
+
+# 3.9 Coordinate systems
+Determines how `x` and `y` aesthetics combine to position elements in a plot.
+
+Available options:
+- `coord_cartesian` (default)
+- `coord_fixed` (Cartesian coordinates with fixed 'aspect ratio')
+- `coord_flip` (Cartesian coordinates with x and y flipped)
+- `coord_map` and `coord_quickmap` (map projections)
+- `coord_polar` (polar coordinates)
+- `coord_trans` (transformed Cartesian coordinate system)
+
+## Exercises
+1. Turn a stacked bar chart into a  pie chart using ```coord_polar()```.
+
+```{r}
+ggplot(data = mpg, aes(x = factor(1), fill = factor(class))) +
+  geom_bar(width = 1) +
+  coord_polar(theta = 'y')
+```
+
+2. What does `labs()` do?
+
+    From the documentation: This function allows you to change the axis, legend, and plot labels, including titles, subtitles, and captions.
