@@ -523,3 +523,19 @@ ggplot(data = mpg, aes(x = factor(1), fill = factor(class))) +
 2. What does `labs()` do?
 
     From the documentation: This function allows you to change the axis, legend, and plot labels, including titles, subtitles, and captions.
+
+3. What's the difference between `coord_quickmap()` and `coord_map`?
+
+    The former makes some assumptions that allow it to produce images faster. `coord_quickmap()` trades speed for correctness. More detail available [here](http://ggplot2.tidyverse.org/reference/coord_map.html#details).
+
+4. What does the plot below tell you about the relationship between city and highway mpg? Why is `coord_fixed()` important? What does `geom_abline()` do?
+
+    The plot suggests that there is a relatively linear relationship between city and highway miles per gallon. Here, `coord_fixed()` forces the ratio of the graph to be 1:1; each unit increase of y is visually equal to a single unit increase of x. This is helpful because it helps us to more accurately tell the magnitude of the relationship. Finally, `geom_abline()` adds a reference line to the plot that shows what a perfectly linear relationship might look like (in this case). It could be made slightly more useful by adjusting the intercept.
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
+  geom_point() +
+  geom_abline() +
+  coord_fixed()
+```
+
