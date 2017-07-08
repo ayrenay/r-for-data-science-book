@@ -1,0 +1,17 @@
+---
+title: "Chapter 4"
+output:
+  html_notebook: 
+    highlight: tango
+    theme: spacelab
+    code_folding: show
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, include = TRUE)
+```
+
+
+```{r, include=FALSE}
+library(tidyverse)
+```
