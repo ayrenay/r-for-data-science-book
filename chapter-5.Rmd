@@ -27,17 +27,347 @@ All dplyr functions have a similar process. Data frames are their inputs and out
 (christmas_flights <- filter(flights, month == 12, day == 25))
 ```
 
-##Comparison operators: 
+## Comparison operators
 
 `>`, `>=`, `<`, `<=`, `!=`, `==`
 
-##Logical operators:
+Also: `near()` is more appropriate than `==` for comparing floats
+
+
+## Logical operators
 
 - `&` ('and')
 - `|` ('or')
 - `!` ('not')
 
-    \*`!(x & y)` is the same as `!x | !y` ; `!(x | y)` is the same as `!x & !y`
+Also: `!(x & y)` is the same as `!x | !y` ; `!(x | y)` is the same as `!x & !y` (De Morgan's Law), but these are not the same as `&&` and `||`.
+
+Another helpful technique is using the `%in%` operator:
+```{r, eval=FALSE}
+apr_may <- filter(flights, month %in% c(11,12))
+```
 
 
-    \*These are not the same as `&&` and `||`
+
+## Missing values
+NULL values (`NA`) are contagious; the output of most operations involving thes values will almost always be `NA`. This is because the result of comparing/using unknown against/with unknown is still...unknown.
+
+You can check for `NA` using `is.na()`.
+
+Filter filters out `NA` and `FALSE` by default.
+
+## Exercises
+1. Find all flights that...
+
+    a. Had an arrival delay of two or more hours
+    
+```{r}
+filter(flights, arr_delay >= 120)
+```
+
+    b. Flew to Houston (`IAH` or `HOU`)
+```{r}
+filter(flights, (dest == 'IAH' | dest == 'HOU'))
+filter(flights, dest %in% c('IAH', 'HOU'))
+```
+
+    c. Were operated by United, American, or Delta
+```{r}
+filter(flights, carrier %in% c('UA', 'AA', 'DL'))
+```
+
+    d. Departed in summer
+```{r}
+filter(flights, month %in% c(7, 8, 9))
+```
+
+
+    e. Arrived more than two hours late, but didn't leave late
+```{r}
+filter(flights, (arr_delay >= 120 & dep_delay <= 0))
+```
+
+
+    f. Were delayed by at least an hour, but made up over 30 minutes in flight
+```{r}
+filter(flights, (dep_delay >= 60 & arr_delay <=30))
+```
+
+    g. Departed between midnight and 6am (inclusive)
+```{r}
+filter(flights, (dep_time >= 0 & dep_time <= 600))
+```
+
+2. How can the previous exercises be simplified using `between()`?
+
+    This could be used to simplify 1e.
+```{r}
+# e. Departed between midnight and 6am (inclusive)
+# filter(flights, (dep_time >= 0 & dep_time <= 600))
+
+filter(flights, between(dep_time, 0, 600))
+```
+
+3. How many flights have a missing `dep_time`? what other variables are missing? What might these rows represent?
+
+8,255 rows are missing a departure time, and a similar number are also missing `dep_delay`, `arr_time`, `arr_time`, and `arr_delay`. This is suggestive of flights that were scheduled but never actually took off.
+
+```{r}
+nrow(filter(flights, is.na(dep_time)))
+```
+
+```{r}
+summary(flights)
+```
+
+4. Why is `NA ^ 0` not missing? Why is `NA | TRUE` not missing? Why is `FALSE & NA` not missing? Can you figure out the general rule?
+
+    I'm not certain of the "general rule", but NA can be coerced to other data types (according to the documentation). As for these examples:
+      
+      - Any number, to the zero power evaluates to 1, so it doesn't matter that we don't know the integer in question. 
+      - The answer to the question: is one of these two things true - <something> _or_ TRUE is TRUE - it doesn't matter if we know the value or not.
+      - It's a similar perspective to the next example. The result of an `&` test depends on both sides of the test evaluating to TRUE. If one evaluates as FALSE, then the whole statement is false. So, it shouldn't matter whether you know one of the values if you know that the other is FALSE.
+      - Not sure on the last example!
+
+```{r}
+NA ^ 0
+NA | TRUE
+FALSE & NA
+NA * 0 # one counter-example
+?NA
+?TRUE
+```
+
+
+# 5.3 Arrange rows
+> `arrange()` : use a column or expression to determine the order of rows in a data frame; additional columns will be used to break ties in the values of preceding columns
+
+`arrange()` is sorts in ascending order by default. `desc()` can be used to reverse this behavior. The sort always desplays `NA` as the final value, regardless of ascending/descending specification.
+
+## Exercises
+1. How could you use `arrange()` to sort all missing values to the start? (Hint: use `is.na()`).
+```{r}
+arrange(flights, !is.na(dep_time))
+```
+
+2. Sort `flights` to find the most delayed flights. 
+
+```{r}
+arrange(flights, desc(dep_delay))
+```
+
+
+    Find the flights that left the earliest.
+
+```{r}
+arrange(flights, dep_delay)
+arrange(flights, dep_time)
+```
+
+3. Sort `flights` to find the fastest flights.
+```{r}
+arrange(flights, air_time)
+```
+
+4. Which flights traveled the longest?
+
+```{r}
+arrange(flights, desc(distance))
+```
+
+
+    Which traveled the shortest?
+  
+```{r}
+arrange(flights, distance)
+```
+
+# 5.4 Select columns
+> `select()` : subset variables
+
+(Compare to subsetting rows using `filter()`)
+
+```{r}
+# select columns by name
+select(flights, origin, dest, air_time, distance)
+
+# select all columns in between first and last identified column (inclusive)
+select(flights, origin:distance)
+
+# select all columns except for those between first and last identified (inclusive)
+select(flights, -(origin:distance))
+```
+
+
+Helper functions:
+See more under `?select`.
+
+```{r}
+select(flights, starts_with("dep"))
+select(flights, ends_with("time"))
+select(flights, contains("dep"))
+# Regex match: matches("(.)\\1")
+# num_range("x", 1:3)
+```
+
+Rename variables using `rename()`.
+```{r, eval=FALSE}
+rename(flights, tail_num = tailnum)
+```
+
+Select all variables using `everything()`.
+```{r, eval=FALSE}
+select(flights, time_hour, air_time, everything())
+```
+
+## Exercises
+1. Brainstorm as many ways as possible to select `dep_time`, `dep_delay`, `arr_time`, and `arr_delay` from `flights`.
+```{r}
+select(flights, dep_time, dep_delay, arr_time, arr_delay)
+select(flights, starts_with('arr'), starts_with('dep'))
+select(flights, ends_with('time'), ends_with('delay'), -contains('sched'), -air_time)
+select(flights, dep_time:arr_delay, -contains('sched'))
+```
+
+2. What happens if you include the name of a variable multiple times in a `select()` call?
+
+    The duplicate name is ignored.
+    
+```{r}
+select(flights, air_time, air_time, distance)
+```
+
+3. What does the `one_of()` fnction do? Why might it be helpful in conjunction with this vector? `vars <- c("year", "month", "day", "dep_delay", "arr_delay")`
+
+    `one_of()` allows you to select multiple variables by exact name. This isn't much different than `select()` on its own, but in conjunction with other functions, this could allow you to write code when the variable names needed aren't known beforehand.
+
+```{r}
+?one_of
+vars <- c("year", "month", "day", "dep_delay", "arr_delay")
+select(flights, one_of(vars))
+```
+
+4. Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
+
+    It is surprising that the default behavior is case sensitive, given the behavior of base R. You can change this setting using
+
+```{r}
+select(flights, contains("TIME"))
+select(flights, contains("TIME", ignore.case = FALSE))
+```
+
+
+# Add new variables
+
+> `mutate()` : adds new columns that are functions of existing columns to (the end of) your dataset
+
+```{r}
+flights_red <- select(flights
+                      , year:day
+                      , ends_with('delay')
+                      , distance
+                      , air_time
+                      )
+mutate(flights_red
+       , gain = arr_delay - dep_delay
+       , speed = distance / air_time * 60
+       , hours = air_time / 60
+       , gain_per_hour = gain / hours # you can refer to cols created in prior lines!
+       )
+```
+
+
+`transmute()` will return just the new variables.
+```{r}
+transmute(flights
+       , gain = arr_delay - dep_delay
+       , speed = distance / air_time * 60
+       , hours = air_time / 60
+       , gain_per_hour = gain / hours
+       )
+```
+
+
+Helpful functions for creating new variables:
+
+
+_Any function can be used, as long as its output is vectorized_
+
+- arithmetic operators
+- modular arithmetic (`%/%` - integer division; `%%` - remainder)
+   
+   
+    _use to break integers into component parts_
+- logs (i.e. `log()`, `log2()`, `log10()`)
+- offsets (i.e. `lead()`, `lag()`)
+- cumulative and rolling aggregates
+- logical comparisons
+- ranking (i.e. `min_rank()`)
+
+
+## Exercises
+1. Currently `dep_time` and `sched_dep_time` are convenient to look at, but hard to compute with because they're not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+
+```{r}
+select(flights, dep_time, sched_dep_time)
+transmute(flights
+          , dep_time
+          , hours = dep_time %/% 100
+          , minutes = dep_time %% 100
+          , mins_since_midnight = hours*60 + minutes
+          )
+```
+
+2. Compare `air_time` witth `arr_time - dep_time`. What do you expect to see? What do you see? What do you need to do to fix it?
+
+    `air_time` only describes the amount of time needed in the air, not the full time of the flight. The difference might be accounted for by something like 'time spent on tarmac' (not available in dataset).
+
+```{r}
+transmute(flights
+          , air_time
+          , arr_time - dep_time
+          )
+?flights
+```
+
+
+3. Compare `dep_time`, `sched_dep_time`, and `dep_delay`. How would you expect those three numbers to be related?
+
+    Before running: I'd expect the delay to be the difference between the departure time and the scheduled departure time.
+    
+    After running: That's the case - not sure why the math is off for flights where either the departure time or scheduled departure time is a number that ends in '00'. Point for further exploration.
+    
+```{r}
+transmute(flights
+          , dep_time
+          , sched_dep_time
+          , dep_delay
+          , delay_calc = dep_time - sched_dep_time
+          )
+```
+
+
+4. Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for `min_rank()`.
+
+```{r}
+?min_rank
+filter(mutate(arrange(flights, desc(dep_delay))
+          , rank = min_rank(desc(dep_delay))
+          , dep_delay
+          )
+       , rank <= 10
+)
+```
+
+5. What does `1:3 + 1:10` return? Why?
+
+    This calculation returns the elements of the first vector added to the elements of the second, iterated through until the lengths match. No real answer to besides that vector calculations are expected to output values of a length which matches the inputs. I'm sure there is a more detailed matrix algebra answer out there to research further sometime.
+
+```{r}
+1:3 + 1:10
+```
+
+
+6. What trigonometric functions does R provide?
+
+    From `?Trig`: R trigonometric functions can compute the cosine, sine, tangent, arc-cosine, arc-sine, arc-tangent, and the two-argument arc-tangent.
