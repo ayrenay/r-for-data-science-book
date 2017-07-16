@@ -257,7 +257,7 @@ select(flights, contains("TIME", ignore.case = FALSE))
 ```
 
 
-# Add new variables
+# 5.5 Add new variables
 
 > `mutate()` : adds new columns that are functions of existing columns to (the end of) your dataset
 
@@ -371,3 +371,119 @@ filter(mutate(arrange(flights, desc(dep_delay))
 6. What trigonometric functions does R provide?
 
     From `?Trig`: R trigonometric functions can compute the cosine, sine, tangent, arc-cosine, arc-sine, arc-tangent, and the two-argument arc-tangent.
+
+
+# 5.6 Grouped summaries
+
+> `summarise()` : collapse a data frame into a single row; typically paired with `group_by()`
+
+```{r}
+flights_by_day <- group_by(flights, year, month, day)
+summarise(flights_by_day, delay = mean(dep_delay, na.rm = T))
+```
+
+You can combine multiple operations using `%>%` (can read as 'then').
+
+## Counts
+Let's check planes to see which have the highest average delay.
+```{r}
+not_canceled = flights %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+
+delays <- not_canceled %>% 
+  group_by(tailnum) %>% 
+  summarise(delay = mean(arr_delay))
+
+ggplot(data = delays, mapping = aes(x = delay)) +
+  geom_freqpoly(binwidth = 10)
+```
+
+There may be other factors at play - let's look at this from a different angle.
+
+```{r}
+delays <- not_canceled %>% 
+  group_by(tailnum) %>% 
+  summarise(
+            delay = mean(arr_delay, na.rm = T)
+            , n = n()
+            )
+
+ggplot(delays, mapping = aes(x = n, y = delay)) +
+  geom_point(alpha = 1/10)
+```
+
+The variation is higher in those planes which didn't take as many flights in 2013. We can filter out groups with the smallest number of observations, allowing us to focus on the patter without the extreme variation of the smaller groups.
+
+```{r}
+delays %>% 
+  filter(n > 25) %>% 
+  ggplot(mapping = aes(x = n, y = delay)) +
+    geom_point(alpha = 1/10)
+```
+
+## Useful summary functions
+- Measures of location (i.e. `mean()` and `median()`)
+- Measures of spread (i.e. `sd()`, `IQR()`, `mad()`)
+- Measures of rank (i.e. `min()`, `quantile()`, `max()`)
+- Measures of position (i.e. `first()`, `nth()`, `last()`)
+- Counts
+    - `n()` : returns size of current group
+    - `sum(!is.na(x))` : returns number of non-missing values
+    - `n_distinct(x)` : returns number of distinct values
+    - `count()`
+- Counts and proportions of logical values
+    
+    When used with numeric functions, logical values (TRUE/FALSE) get converted to integers (1/0, respectively). This means you can use things like `sum()` to get the number of trues and `mean()` to get the proportion.
+
+## Grouping by multiple variables
+Each summary of grouped variables peels one layer off of the grouping, making it simple to roll up a dataset. You have to be careful here though, since groupwise and overall statistics are not always the same.
+
+```{r}
+daily <- group_by(flights, year, month, day)
+(per_day <- summarise(daily, flights = n()))
+
+(per_month <- summarise(per_day, flights = sum(flights)))
+```
+
+
+## Ungrouping
+> `ungroup()` : return operations on ungrouped data
+
+```{r}
+daily %>% 
+  ungroup() %>% 
+  summarise(flights = n())
+```
+
+## Exercises
+1. Brainstorm five different ways to assess typical delay characteristics of a group of flights. Which is more important, arrival delay or departure delay?
+
+    If we were tracking the characteristics of an individual plane, we might be able to have some idea about how impactful arrival delay is. Passengers however, are more concerned with departure delays. Given the scenarios presented, you could use some of the following to assess delay:
+    
+    - mean/median
+    - range
+    - quantile
+    - any of those across hour/week/month/year
+
+2. Come up with another approach that will give you the same output as `not_cancelled %>% count(dest)` and `not_cancelled %>% count(tailnum, wt = distance)` (without using `count()`).
+
+```{r}
+#not_canceled %>% count(dest)
+dest_count <- group_by(not_canceled, dest)
+summarise(dest_count, n())
+  
+# not_canceled %>% count(tailnum, wt = distance)
+by_plane <- group_by(not_canceled, tailnum)
+summarise(by_plane, sum(distance))
+```
+
+3. Our definition of cancelled flights `(is.na(dep_delay) | is.na(arr_delay) )` is slightly suboptimal. Why? Which is the most important column?
+
+    An arrival delay would never happen for a cancelled flight, but a flight could be delayed in departure then ultimately cancelled. Presumably, there could be some flights with a missing arrival delay yet still having a departure delay. In this scenario, I still think they are both still important, but the classification method could be adjusted.
+
+4. Look at the number of cancelled flights per day. Is there a pattern? Is the proportion of cancelled flights related to the average delay?
+```{r}
+
+```
+
+    
