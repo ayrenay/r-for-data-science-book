@@ -50,7 +50,7 @@ apr_may <- filter(flights, month %in% c(11,12))
 
 
 ## Missing values
-NULL values (`NA`) are contagious; the output of most operations involving thes values will almost always be `NA`. This is because the result of comparing/using unknown against/with unknown is still...unknown.
+NULL values (`NA`) are contagious; the output of most operations involving these values will almost always be `NA`. This is because the result of comparing/using unknown against/with unknown is still...unknown.
 
 You can check for `NA` using `is.na()`.
 
@@ -142,7 +142,7 @@ NA * 0 # one counter-example
 # 5.3 Arrange rows
 > `arrange()` : use a column or expression to determine the order of rows in a data frame; additional columns will be used to break ties in the values of preceding columns
 
-`arrange()` is sorts in ascending order by default. `desc()` can be used to reverse this behavior. The sort always desplays `NA` as the final value, regardless of ascending/descending specification.
+`arrange()` is sorts in ascending order by default. `desc()` can be used to reverse this behavior. The sort always displays `NA` as the final value, regardless of ascending/descending specification.
 
 ## Exercises
 1. How could you use `arrange()` to sort all missing values to the start? (Hint: use `is.na()`).
@@ -237,7 +237,7 @@ select(flights, dep_time:arr_delay, -contains('sched'))
 select(flights, air_time, air_time, distance)
 ```
 
-3. What does the `one_of()` fnction do? Why might it be helpful in conjunction with this vector? `vars <- c("year", "month", "day", "dep_delay", "arr_delay")`
+3. What does the `one_of()` function do? Why might it be helpful in conjunction with this vector? `vars <- c("year", "month", "day", "dep_delay", "arr_delay")`
 
     `one_of()` allows you to select multiple variables by exact name. This isn't much different than `select()` on its own, but in conjunction with other functions, this could allow you to write code when the variable names needed aren't known beforehand.
 
@@ -259,7 +259,7 @@ select(flights, contains("TIME", ignore.case = FALSE))
 
 # 5.5 Add new variables
 
-> `mutate()` : adds new columns that are functions of existing columns to (the end of) your dataset
+> `mutate()` : adds new columns that are functions of existing columns to (the end of) your data set
 
 ```{r}
 flights_red <- select(flights
@@ -318,7 +318,7 @@ transmute(flights
           )
 ```
 
-2. Compare `air_time` witth `arr_time - dep_time`. What do you expect to see? What do you see? What do you need to do to fix it?
+2. Compare `air_time` with `arr_time - dep_time`. What do you expect to see? What do you see? What do you need to do to fix it?
 
     `air_time` only describes the amount of time needed in the air, not the full time of the flight. The difference might be accounted for by something like 'time spent on tarmac' (not available in dataset).
 
@@ -387,10 +387,10 @@ You can combine multiple operations using `%>%` (can read as 'then').
 ## Counts
 Let's check planes to see which have the highest average delay.
 ```{r}
-not_canceled = flights %>% 
+not_cancelled = flights %>% 
   filter(!is.na(dep_delay), !is.na(arr_delay))
 
-delays <- not_canceled %>% 
+delays <- not_cancelled %>% 
   group_by(tailnum) %>% 
   summarise(delay = mean(arr_delay))
 
@@ -401,7 +401,7 @@ ggplot(data = delays, mapping = aes(x = delay)) +
 There may be other factors at play - let's look at this from a different angle.
 
 ```{r}
-delays <- not_canceled %>% 
+delays <- not_cancelled %>% 
   group_by(tailnum) %>% 
   summarise(
             delay = mean(arr_delay, na.rm = T)
@@ -436,7 +436,7 @@ delays %>%
     When used with numeric functions, logical values (TRUE/FALSE) get converted to integers (1/0, respectively). This means you can use things like `sum()` to get the number of trues and `mean()` to get the proportion.
 
 ## Grouping by multiple variables
-Each summary of grouped variables peels one layer off of the grouping, making it simple to roll up a dataset. You have to be careful here though, since groupwise and overall statistics are not always the same.
+Each summary of grouped variables peels one layer off of the grouping, making it simple to roll up a data set. You have to be careful here though, since groupwise and overall statistics are not always the same.
 
 ```{r}
 daily <- group_by(flights, year, month, day)
@@ -468,12 +468,12 @@ daily %>%
 2. Come up with another approach that will give you the same output as `not_cancelled %>% count(dest)` and `not_cancelled %>% count(tailnum, wt = distance)` (without using `count()`).
 
 ```{r}
-#not_canceled %>% count(dest)
-dest_count <- group_by(not_canceled, dest)
+#not_cancelled %>% count(dest)
+dest_count <- group_by(not_cancelled, dest)
 summarise(dest_count, n())
   
-# not_canceled %>% count(tailnum, wt = distance)
-by_plane <- group_by(not_canceled, tailnum)
+# not_cancelled %>% count(tailnum, wt = distance)
+by_plane <- group_by(not_cancelled, tailnum)
 summarise(by_plane, sum(distance))
 ```
 
@@ -483,7 +483,22 @@ summarise(by_plane, sum(distance))
 
 4. Look at the number of cancelled flights per day. Is there a pattern? Is the proportion of cancelled flights related to the average delay?
 ```{r}
+flights %>% 
+  group_by(month,day) %>% 
+  summarise(cancelled_flights = sum((is.na(dep_delay) | is.na(arr_delay) ))) %>% 
+  ggplot(mapping = aes(x = paste(month,day, sep = '-'))) +
+  geom_bar(aes(weight = cancelled_flights))
 
+flights %>% 
+  group_by(day) %>% 
+  summarise(cancelled_flights = 
+              sum((is.na(dep_delay) | is.na(arr_delay) ))
+            , total_flights = n()
+            ) %>% 
+  ggplot(mapping = aes(x = day)) +
+  geom_bar(aes(weight = total_flights)) +
+  geom_bar(aes(weight = cancelled_flights), fill = "#388E8E")
 ```
+
 
     
